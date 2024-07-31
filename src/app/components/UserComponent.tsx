@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 
-interface Car {
+export interface Car {
   id: number;
   patente: string;
   parkingSlot: number;
