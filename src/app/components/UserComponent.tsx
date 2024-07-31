@@ -19,6 +19,7 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
   const [currentSlot, setCurrentSlot] = useState<number | null>(null);
   const [price, setPrice] = useState<number>(0);
   const [parkingTime, setParkingTime] = useState<string>('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const initialState = Array(5).fill(null);
@@ -30,6 +31,7 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
       };
     });
     setSelected(initialState);
+    setLoading(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -76,6 +78,7 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
   const handleConfirm = async () => {
     if (currentSlot !== null) {
       if (selected[currentSlot]) {
+        setLoading(true);
         // Removing car
         if (inputValue === selected[currentSlot]['patente']) {
           try {
@@ -101,12 +104,17 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
           } finally {
             console.log('Finally');
             setMessage('Car removed successfully');
+            setPrice(0);
+            setLoading(false);
           }
         } else {
           setMessage('Incorrect license plate');
+          setPrice(0);
+          setLoading(false);
         }
       } else {
         // Parking car
+        setLoading(true);
         try {
           const response = await fetch('/api/addParking', {
             method: 'POST',
@@ -132,13 +140,15 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
         } finally {
           console.log('Finally');
           setMessage('Car parked successfully');
+          setLoading(false);
+          setPrice(0);
         }
       }
     }
     setInputValue('');
   };
 
-  const availableSlots = 5 - cars.length;
+  const availableSlots = 5 - selected.filter((car) => car !== null).length;
 
   return (
     <main className='h-screen flex min-h-screen flex-col items-center p-4'>
@@ -167,30 +177,36 @@ export default function UserComponent({ cars }: Readonly<{ cars: Car[] }>) {
         />
 
         <div className='flex items-center justify-center'>
-          <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4'>
-            {selected?.map((car, index) => (
-              <div
-                key={index}
-                className={`relative w-32 h-32 ${
-                  car !== null ? 'bg-white' : 'bg-blue-500'
-                } border-r-4 border-yellow-500 border-l-4 flex items-center justify-center cursor-pointer`}
-                onClick={() => handleSquareClick(index)}
-              >
-                {car !== null ? (
-                  <div className='text-center font-bold'>
-                    <Image
-                      src='/carRed.avif'
-                      alt={`Square ${index + 1}`}
-                      layout='fill'
-                      objectFit='cover'
-                    />
-                  </div>
-                ) : (
-                  <p>{index + 1}</p>
-                )}
-              </div>
-            ))}
-          </div>
+          {loading ? (
+            <div className='animate-pulse flex space-x-4'>
+              <div className=' bg-slate-700 h-10 w-60 pt-2'> Loading...</div>
+            </div>
+          ) : (
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 p-4'>
+              {selected?.map((car, index) => (
+                <div
+                  key={index}
+                  className={`relative w-32 h-32 ${
+                    car !== null ? 'bg-white' : 'bg-blue-500'
+                  } border-r-4 border-yellow-500 border-l-4 flex items-center justify-center cursor-pointer`}
+                  onClick={() => handleSquareClick(index)}
+                >
+                  {car !== null ? (
+                    <div className='text-center font-bold'>
+                      <Image
+                        src='/carRed.avif'
+                        alt={`Square ${index + 1}`}
+                        layout='fill'
+                        objectFit='cover'
+                      />
+                    </div>
+                  ) : (
+                    <p>{index + 1}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         {price > 0 ? (
           <div className='text-2xl font-bold my-4 text-black bg-green-300 py-2 rounded'>
